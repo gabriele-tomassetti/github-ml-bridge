@@ -13,7 +13,7 @@ Configuration
 ======
 
 There are several values to be set in the `info.cfg` file.
-- *token* is the access token for github (see [Personal access tokens](https://github.com/settings/tokens)
+- *token* is the access token for github (see [Personal access tokens](https://github.com/settings/tokens))
 - *bot_email* and *bot_name* contain the info of the bot (needed to pick the right comments from the mailing list)
 - *mailing_list* indicates the address of the mailing list where to send the messages
 - *email*, *smtp* and *imap* contain the info needed to send and read emails through an email account
