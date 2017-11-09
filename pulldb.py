@@ -33,8 +33,10 @@ class PullDB:
             )
 
             self.comments = Table('Comments', meta,                
-                Column('PullRequest', Integer, ForeignKey('PullRequests.Id')),
-                Column('Id', Integer, primary_key=True)
+                Column('PullRequest', Integer, ForeignKey('PullRequests.Id')),                
+                Column('Id', Integer, primary_key=True),
+                Column('CreatedAt', String),
+                Column('Text', String)
             )
             
             meta.create_all(engine)            
@@ -62,6 +64,12 @@ class PullDB:
         selection = select([self.comments]).where(and_(self.comments.columns.PullRequest == pull_id, self.comments.columns.Id == comment_id))
 
         result = self.connection.execute(selection)
+        return result.first() != None
+
+    def exists_email_comment(self, date, text):
+        selection = select([self.comments]).where(and_(self.comments.columns.CreatedAt == date, self.comments.columns.Text == text))
+
+        result = self.connection.execute(selection)
         return result.first() != None                 
     
     def record_pull_request(self, owner, repo, number, number_comments, number_review_comments, number_commits):
@@ -79,15 +87,17 @@ class PullDB:
         
         self.connection.execute(insertion)
 
-    def record_comment(self, pull_request, id):
-        insertion = self.comments.insert().values(PullRequest=pull_request, Id=id)
+    def record_comment(self, pull_request, id, created_at, text):
+        insertion = self.comments.insert().values(PullRequest=pull_request, Id=id, CreatedAt=created_at, Text=text)
         
         self.connection.execute(insertion)
 
     def setup_project(self, owner, repo):
-        insertion = self.projects.insert().values(Owner=owner, Repo=repo)
+        project = self.connection.execute(select([self.projects]).where(self.projects.columns.Owner == owner and self.projects.columns.Repo == repo)).fetchone()
         
-        self.connection.execute(insertion)
+        if(project == None): 
+            insertion = self.projects.insert().values(Owner=owner, Repo=repo)
+            self.connection.execute(insertion)
 
     def delete_project(self, id):
         project = self.connection.execute(select([self.projects]).where(self.projects.columns.Id == id)).fetchone()

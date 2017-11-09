@@ -62,7 +62,7 @@ class GithubClient:
                 logging.info("There are new comments")
                 # this gets us the comments related to the whole pull request
                 for comment in pull_request.get_issue_comments():
-                    logging.info("Found a comment")
+                    logging.info("Found an issue comment")
                     if(self.database.exists_comment(pull['Id'], comment.id) == False):
                         logging.info("-> the comment is new")
                         comments.append(Comment(comment.id, comment.user.name, comment.user.email, comment.created_at, comment.body)) 
@@ -71,7 +71,7 @@ class GithubClient:
                 logging.info("There are new review comments")
                 # this gets us the comments related to a single modification
                 for comment in pull_request.get_review_comments():
-                    logging.info("Found a comment")
+                    logging.info("Found a review comment")
                     if(self.database.exists_comment(pull['Id'], comment.id) == False):
                         logging.info("-> the comment is new")
                         comments.append(Comment(comment.id, comment.user.name,comment.user.email, comment.created_at, comment.body,comment.diff_hunk, comment.path))
@@ -95,7 +95,7 @@ class GithubClient:
                     self.database.record_pull_request(self.owner, self.repo, pull_request.number, pull_request.comments, pull_request.review_comments, pull_request.commits)           
                     pull_id = self.database.get_pull_request_id(self.owner, self.repo, pull_request.number)                
             else:      
-                # it a pull request we have already seen
+                # it is a pull request we have already seen
                 if(len(commits) > 0):                    
                     # it is an updated pull request                 
                     pull.download_diff()
@@ -109,29 +109,46 @@ class GithubClient:
                         # record the updated pull request
                         self.database.update_pull_request(pull['Id'], self.owner,   self.repo, pull_request.number,pull_request.comments, pull_request.review_comments, pull_request.commits)
                         pull_id = pull['Id']
+                elif (len(comments) > 0):
+                    # we have found new comments
+                    sent = True
+            
+            if(len(comments) > 0):
+                logging.info("There are %d comments " % len(comments))
+                for comment in comments:
+                    if(self.database.exists_comment(pull['Id'], comment.id) == False):
+                        # send comment if we have sent a pull request or there is already one in the database
+                        if(sent == True):                        
+                            logging.info("Sending a comment")                        
+                            if(self.mailer.send_email_comment(self.owner, self.repo, pull_request, comment) ==  True):                                
+                                # record the updated pull request
+                                self.database.update_pull_request(pull['Id'], self.owner,   self.repo, pull_request.number,pull_request.comments, pull_request.review_comments, pull_request.commits)
+                                # record the comment
+                                self.database.record_comment(pull["Id"], comment.id, comment.created_at, comment.body)
             
             if(sent == True):
                 for commit in commits:
                     if(self.database.exists_commit(pull_id, commit.sha) == False):
-                        self.database.record_commit(pull_id, commit.sha)
-                
-                logging.info("There are %d comments " % len(comments))
-                for comment in comments:
-                    if(self.database.exists_comment(pull_id, comment.id) == False):
-                        logging.info("Sending a comment")
-                        if(self.mailer.send_email_comment(self.owner, self.repo, pull, comment) == True):
-                            self.database.record_comment(pull_id, comment.id)
+                        self.database.record_commit(pull_id, commit.sha)                                
     
-    def send_comment_from_email(self, email_subject, email_from, email_message):        
+    def send_comment_from_email(self, email_subject, email_from, email_date, email_message):        
         start = email_subject.find("[#")
         end = email_subject.find("]", start)
         pull_number = int(email_subject[start+2:end])
         
         start = email_subject.find("[-")
         end = email_subject.find("]", start)
-        (owner, repo) = str(email_subject[start+2:end]).split("/")
-        
-        # we send back comments only for the current project
+        (owner, repo) = str(email_subject[start+2:end]).split("/")                
+
+        # we send back comments only for the current project        
         if(self.owner == owner and self.repo == repo):
-            g = Github(self.token)
-            g.get_user(self.owner).get_repo(self.repo).get_issue(pull_number).create_comment("From %s\n\n%s" % (email_from, email_message))
+            # we have to check if there is already a comment with the same date and text            
+            if (self.database.exists_email_comment(email_date, email_message) == False):                
+                g = Github(self.token)
+                comment = g.get_user(self.owner).get_repo(self.repo).get_issue(pull_number).create_comment("From #%s\n\n%s" % (email_from, email_message))            
+
+                # record comment
+                pull_id = self.database.get_pull_request_id(owner, repo, pull_number)
+                # we record the date and text of the email message
+                self.database.record_comment(pull_id, comment.id, email_date, email_message)
+

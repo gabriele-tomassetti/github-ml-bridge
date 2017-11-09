@@ -61,8 +61,8 @@ def run(setup=False):
         pull_requests = github.check_pull_requests(setup)
     
         # no need to check for comments at setup
-        #if(setup == False):
-        #    mailer.check_ml_comments(github)
+        if(setup == False):
+            mailer.check_ml_comments(github)
 
 def warning():
     print("""Usage: python main.py COMMANDS

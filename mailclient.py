@@ -131,7 +131,6 @@ class MailClient:
             return False
     
     def check_ml_comments(self, github_client):        
-        
         mail = imaplib.IMAP4_SSL(self.imap_host, self.imap_port)
         mail.login(self.user, self.password)
         mail.select(mailbox='INBOX', readonly=True)
@@ -140,28 +139,36 @@ class MailClient:
         
         if typ != 'OK':
             logging.info("No messages found!")
-            return
+            return        
 
         for num in msgs[0].split():            
             typ, msgs = mail.fetch(num, '(RFC822)')
             if typ != 'OK':
                 logging.error("ERROR getting message", num)
-                return
+                return            
 
             msg = email.message_from_bytes(msgs[0][1])
             decode = email.header.decode_header(msg['Subject'])[0]
-            subject = decode[0]
-                        
-            if msg['From'] != self.bot_email:
+            subject = decode[0]                          
+
+            # deal only with messages to the mailing list from everybody but this bot                        
+            if msg['From'] != self.bot_email and msg['To'] == self.mailing_list:                
                 text = ''
-                lines = msg.get_payload().splitlines(keepends=True)   
+                # we assume a non-multipart message, possibly encoded
+                lines = msg.get_payload(None, True).splitlines(keepends=True)                   
 
-                for line in lines:
-                    # exclude previous messages included in the body of the email
-                    if (line.startswith('>') == False):
-                        text += line
+                for line in lines:                    
+                    # exclude previous messages included in the body of the email                    
+                    if (line.startswith(b'>') == False):
+                        text += line.decode(encoding='ascii')
+                
+                # remove ending newlines
+                text = text.rstrip()   
+                # remove last line, which contains information about the sender of the reply            
+                # e.g., 9 november 2017, admin@example.com wrote:
+                text = text[0:text.rfind('\n')]
 
-                github_client.send_comment_from_email(msg['Subject'], msg['From'], text)
+                github_client.send_comment_from_email(msg['Subject'], msg['From'], msg['Date'], text)
         
         mail.close()
         mail.logout()
