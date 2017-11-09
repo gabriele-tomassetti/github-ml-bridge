@@ -12,6 +12,7 @@ import logging
 import imaplib
 from mailclient import MailClient
 from models import *
+import time
 
 class GithubClient:    
     def __init__(self, database, token, owner, repo, mailer: MailClient):
@@ -142,8 +143,13 @@ class GithubClient:
 
         # we send back comments only for the current project        
         if(self.owner == owner and self.repo == repo):
-            # we have to check if there is already a comment with the same date and text            
-            if (self.database.exists_email_comment(email_date, email_message) == False):                
+            # we have to check that the message was sent after the start of the project  
+            project = self.database.get_project(self.owner, self.repo)
+            time_message = time.strptime(email_date, "%a, %d %b %Y %X %z")
+            start_project = time.strptime(project["StartingDate"], "%a, %d %b %Y %X %z")            
+
+            # we have to check if there is already a comment with the same date and text           
+            if (self.database.exists_email_comment(email_date, email_message) == False and time_message > start_project == True):                
                 g = Github(self.token)
                 comment = g.get_user(self.owner).get_repo(self.repo).get_issue(pull_number).create_comment("From #%s\n\n%s" % (email_from, email_message))            
 

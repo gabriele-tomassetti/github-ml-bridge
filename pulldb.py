@@ -13,6 +13,7 @@ class PullDB:
                 Column('Id', Integer, primary_key=True),
                 Column('Owner', String),
                 Column('Repo', String),                
+                Column('StartingDate', String),
                 sqlite_autoincrement=True
             )
             
@@ -92,21 +93,26 @@ class PullDB:
         
         self.connection.execute(insertion)
 
-    def setup_project(self, owner, repo):
+    def setup_project(self, owner, repo, starting_date):
         project = self.connection.execute(select([self.projects]).where(self.projects.columns.Owner == owner and self.projects.columns.Repo == repo)).fetchone()
         
         if(project == None): 
-            insertion = self.projects.insert().values(Owner=owner, Repo=repo)
+            insertion = self.projects.insert().values(Owner=owner, Repo=repo, StartingDate=starting_date)
             self.connection.execute(insertion)
 
     def delete_project(self, id):
         project = self.connection.execute(select([self.projects]).where(self.projects.columns.Id == id)).fetchone()
         if(project != None):            
-            self.connection.execute(self.pulls.delete().where(self.pulls.columns.Owner == project.Owner and self.pulls.columns.Repo == project.Repo))
+            self.connection.execute(self.pulls.delete().where(and_(self.pulls.columns.Owner == project.Owner , self.pulls.columns.Repo == project.Repo)))
         deletion = self.projects.delete().where(self.projects.columns.Id == id)        
         
         return self.connection.execute(deletion).rowcount == 1
 
+    def get_project(self, owner, repo):
+        project = self.connection.execute(select([self.projects]).where(and_(self.projects.columns.Owner == owner, self.projects.columns.Repo == repo))).fetchone()         
+        
+        return project
+    
     def get_projects(self):
         selection = select([self.projects])
 

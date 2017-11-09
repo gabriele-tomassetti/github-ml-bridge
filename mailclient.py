@@ -14,7 +14,7 @@ import imaplib
 from models import *
 
 class MailClient:
-    def __init__(self, bot_email, bot_name, mailing_list, smtp_host, smtp_port, imap_host, imap_port, email_user, email_password):
+    def __init__(self, bot_email, bot_name, mailing_list, smtp_host, smtp_port, imap_host, imap_port, imap_user, imap_password, smtp_user, smtp_password):
         self.bot_name = bot_name
         self.bot_email = bot_email
         self.mailing_list = mailing_list
@@ -22,8 +22,10 @@ class MailClient:
         self.smtp_port = smtp_port
         self.imap_host = imap_host
         self.imap_port = imap_port
-        self.user = email_user
-        self.password = email_password
+        self.imap_user = imap_user
+        self.imap_password = imap_password
+        self.smtp_user = smtp_user
+        self.smtp_password = smtp_password
     
     def send_email_pull_request(self, owner, repo, pull_request, update = False) -> bool: 
         msg = EmailMessage()
@@ -84,7 +86,7 @@ class MailClient:
             smtp = smtplib.SMTP(self.smtp_host, self.smtp_port)
             smtp.ehlo()
             smtp.starttls()            
-            smtp.login(self.user,self.password)
+            smtp.login(self.smtp_user,self.smtp_password)
             smtp.send_message(msg)
             smtp.quit()
             return True
@@ -122,7 +124,7 @@ class MailClient:
             smtp = smtplib.SMTP(self.smtp_host, self.smtp_port)
             smtp.ehlo()
             smtp.starttls()            
-            smtp.login(self.user,self.password)
+            smtp.login(self.smtp_user,self.smtp_password)
             smtp.send_message(msg)
             smtp.quit()
             return True
@@ -132,7 +134,7 @@ class MailClient:
     
     def check_ml_comments(self, github_client):        
         mail = imaplib.IMAP4_SSL(self.imap_host, self.imap_port)
-        mail.login(self.user, self.password)
+        mail.login(self.imap_user, self.imap_password)
         mail.select(mailbox='INBOX', readonly=True)
         
         typ, msgs = mail.search(None, 'SUBJECT "[%s]"' % self.bot_name)
@@ -167,7 +169,7 @@ class MailClient:
                 # remove last line, which contains information about the sender of the reply            
                 # e.g., 9 november 2017, admin@example.com wrote:
                 text = text[0:text.rfind('\n')]
-
+                
                 github_client.send_comment_from_email(msg['Subject'], msg['From'], msg['Date'], text)
         
         mail.close()

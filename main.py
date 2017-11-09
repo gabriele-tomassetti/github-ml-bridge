@@ -7,6 +7,8 @@ import logging
 from mailclient import MailClient
 from githubclient import GithubClient
 from models import *
+import pytz
+from datetime import datetime
 
 def multiply_symbol(additions, deletions):
     text = ""
@@ -44,7 +46,7 @@ def run(setup=False):
         if(not config['mailing_list']):
             raise Exception('Missing Mailing List address')
         
-        if(not config['smtp']['host'] or config['smtp']['port'] == 0 or not config['imap']['host'] or config['imap']['port'] == 0 or not config['email']['user'] or not config['email']['password']):
+        if(not config['smtp']['host'] or config['smtp']['port'] == 0 or not config['imap']['host'] or config['imap']['port'] == 0 or not config['account_smtp']['user'] or not config['account_smtp']['password']or not config['account_imap']['user'] or not config['account_imap']['password']):
             raise Exception('Missing Email info needed to send email')
         
     except Exception as error:            
@@ -53,14 +55,14 @@ def run(setup=False):
 
     database = PullDB("dati_pull.db")
     
-    mailer = MailClient(config['bot_email'], config['bot_name'], config['mailing_list'], config['smtp']['host'], config['smtp']['port'], config['imap']['host'], config['imap']['port'], config['email']['user'], config['email']['password'])    
+    mailer = MailClient(config['bot_email'], config['bot_name'], config['mailing_list'], config['smtp']['host'], config['smtp']['port'], config['imap']['host'], config['imap']['port'], config['account_imap']['user'], config['account_imap']['password'], config['account_smtp']['user'], config['account_smtp']['password'])    
     
     projects = database.get_projects()
     for project in projects:  
         github = GithubClient(database, config['token'], project['Owner'], project['Repo'], mailer)
         pull_requests = github.check_pull_requests(setup)
     
-        # no need to check for comments at setup
+        # no need to check for email comments at setup
         if(setup == False):
             mailer.check_ml_comments(github)
 
@@ -93,8 +95,11 @@ def main(argv):
         if(len(sys.argv) < 4):            
             warning()
         else:
-            database = PullDB("dati_pull.db")        
-            database.setup_project(str(argv[2]), str(argv[3]))             
+            database = PullDB("dati_pull.db")
+            # we need the current time to avoid duplicate comments from the mailing list
+            # in the event that the project is deleted and we have to recreate a new one
+            now = datetime.utcnow().replace(tzinfo=pytz.utc)            
+            database.setup_project(str(argv[2]), str(argv[3]), now.strftime("%a, %d %b %Y %X %z"))
             run(setup=True)
     elif (sys.argv[1] == "projects"):
         database = PullDB("dati_pull.db")
@@ -115,9 +120,10 @@ def main(argv):
         else:
             print("The project has been deleted.")
 
-    elif (sys.argv[1] == "run"):
+    elif (sys.argv[1] == "run"):        
+        logging.info("ehi")
         run()               
-    else:
+    else:                
         warning()
 
 if __name__ == "__main__":

@@ -107,5 +107,6 @@ venv.bak/
 .vscode/
 
 # custom files
-.db
-.log
+*.db
+*.log
+info.cfg

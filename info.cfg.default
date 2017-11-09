@@ -3,7 +3,11 @@
       "bot_email": "",
       "bot_name": "",
       "mailing_list": "",
-      "email" : {
+      "account_imap" : {
+            "user" : "",
+            "password" : ""
+      },
+      "account_smtp" : {
             "user" : "",
             "password" : ""
       },
