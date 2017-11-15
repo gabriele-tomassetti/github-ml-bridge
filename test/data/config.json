@@ -1,0 +1,24 @@
+{
+    "token": "",       
+    "bot_email": "bot@example",
+    "bot_name": "GitHubBot",
+    "mailing_list": "mailing_list@example",
+    "account_smtp" : {
+          "user" : "",
+          "password" : ""
+    },
+    "account_imap" : {
+          "user" : "user@example",
+          "password" : "password"
+    },
+    "smtp" : {
+          "host" : "localhost",
+          "port" : 3000,
+          "safe" : false    
+    },
+    "imap" : {
+          "host" : "localhost",
+          "port" : 2000,
+          "safe" : false     
+    }
+}

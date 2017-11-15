@@ -14,14 +14,16 @@ import imaplib
 from models import *
 
 class MailClient:
-    def __init__(self, bot_email, bot_name, mailing_list, smtp_host, smtp_port, imap_host, imap_port, imap_user, imap_password, smtp_user, smtp_password):
+    def __init__(self, bot_email, bot_name, mailing_list, smtp_host, smtp_port, smtp_safe, imap_host, imap_port, imap_safe, imap_user, imap_password, smtp_user, smtp_password):
         self.bot_name = bot_name
         self.bot_email = bot_email
         self.mailing_list = mailing_list
         self.smtp_host = smtp_host
         self.smtp_port = smtp_port
+        self.smtp_safe = smtp_safe
         self.imap_host = imap_host
         self.imap_port = imap_port
+        self.imap_safe = imap_safe
         self.imap_user = imap_user
         self.imap_password = imap_password
         self.smtp_user = smtp_user
@@ -83,9 +85,10 @@ class MailClient:
         msg.set_content(text)
 
         try:
-            smtp = smtplib.SMTP(self.smtp_host, self.smtp_port)
-            smtp.ehlo()
-            smtp.starttls()            
+            smtp = smtplib.SMTP(self.smtp_host, self.smtp_port)            
+            smtp.ehlo_or_helo_if_needed()
+            if(self.smtp_safe):
+                smtp.starttls()
             smtp.login(self.smtp_user,self.smtp_password)
             smtp.send_message(msg)
             smtp.quit()
@@ -122,8 +125,9 @@ class MailClient:
 
         try:
             smtp = smtplib.SMTP(self.smtp_host, self.smtp_port)
-            smtp.ehlo()
-            smtp.starttls()            
+            smtp.ehlo_or_helo_if_needed()
+            if(self.smtp_safe):
+                smtp.starttls()            
             smtp.login(self.smtp_user,self.smtp_password)
             smtp.send_message(msg)
             smtp.quit()
@@ -133,7 +137,10 @@ class MailClient:
             return False
     
     def check_ml_comments(self, github_client):        
-        mail = imaplib.IMAP4_SSL(self.imap_host, self.imap_port)
+        if(self.imap_safe):
+            mail = imaplib.IMAP4_SSL(self.imap_host, self.imap_port)
+        else:
+            mail = imaplib.IMAP4(self.imap_host, self.imap_port)
         mail.login(self.imap_user, self.imap_password)
         mail.select(mailbox='INBOX', readonly=True)
         
@@ -151,9 +158,9 @@ class MailClient:
 
             msg = email.message_from_bytes(msgs[0][1])
             decode = email.header.decode_header(msg['Subject'])[0]
-            subject = decode[0]                          
+            subject = decode[0]
 
-            # deal only with messages to the mailing list from everybody but this bot                        
+            # deal only with messages to the mailing list from everybody but this bot           
             if msg['From'] != self.bot_email and msg['To'] == self.mailing_list:                
                 text = ''
                 # we assume a non-multipart message, possibly encoded

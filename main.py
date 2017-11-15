@@ -55,7 +55,7 @@ def run(setup=False):
 
     database = PullDB("dati_pull.db")
     
-    mailer = MailClient(config['bot_email'], config['bot_name'], config['mailing_list'], config['smtp']['host'], config['smtp']['port'], config['imap']['host'], config['imap']['port'], config['account_imap']['user'], config['account_imap']['password'], config['account_smtp']['user'], config['account_smtp']['password'])    
+    mailer = MailClient(config['bot_email'], config['bot_name'], config['mailing_list'], config['smtp']['host'], config['smtp']['port'], config['smtp']['safe'], config['imap']['host'], config['imap']['port'], config['imap']['safe'], config['account_imap']['user'], config['account_imap']['password'], config['account_smtp']['user'], config['account_smtp']['password'])    
     
     projects = database.get_projects()
     for project in projects:  
@@ -123,7 +123,7 @@ def main(argv):
     elif (sys.argv[1] == "run"):        
         logging.info("ehi")
         run()               
-    else:                
+    else:        
         warning()
 
 if __name__ == "__main__":

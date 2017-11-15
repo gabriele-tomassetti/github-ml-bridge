@@ -59,3 +59,24 @@ Notes
 * The bot does need to have its own account/address to send email, but it can read from any account that receives messages from the mailing list. It needs an address to detect its owns emails among the ones sent to the mailing list.
 * The bot use the GitHub REST API to read pull requests and read/send comments: it does not rely on a webhook.
 * The bot can read review comments from github, but it sends all comments from the mailing list as issue comments.
+
+Tests
+======
+
+* Install the dependencies for the tests (in addition to the normal ones)
+```
+# pip install -r requirements_tests.txt
+```
+
+Note: the tests rely on a fake email server called **localmail**, which is written for Python 2. If the script complains about **localmail** or **twistd** you want to make sure that you install localmail with pip/python 2.7.
+
+For example, this way:
+```
+# python2.7 get-pip.py
+# pip2.7 install localmail
+```
+
+* Run the tests
+```
+# ./run_tests.sh
+```

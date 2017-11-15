@@ -110,3 +110,6 @@ venv.bak/
 *.db
 *.log
 info.cfg
+test/localmail.mbox
+test/twistd.log
+test/twistd.pid

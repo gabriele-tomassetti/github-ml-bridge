@@ -13,10 +13,12 @@
       },
       "smtp" : {
             "host" : "",
-            "port" : 0       
+            "port" : 0,
+            "safe" : true
       },
       "imap" : {
             "host" : "",
-            "port" : 0            
+            "port" : 0,
+            "safe" : true          
       }
  }

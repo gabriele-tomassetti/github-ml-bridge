@@ -13,7 +13,7 @@ import imaplib
 import requests
 
 class PullRequest:
-    def __init__(self, title, url, diff_url, author, number, text, label, number_comments, number_review_comments,number_commits, updated_at, changed_files, additions, deletions, commits, comments):
+    def __init__(self, title, url, diff_url, author, number, text, label, number_comments, number_review_comments, number_commits, updated_at, changed_files, additions, deletions, commits, comments):
         self.title = title
         self.url = url
         self.diff_url = diff_url
